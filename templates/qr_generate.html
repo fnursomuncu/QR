@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canlı Yoklama - {{ current_session.course_name }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        body { 
+            background-color: #f4f6f9; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; padding: 20px; 
+        }
+        .top-header {
+            width: 100%; max-width: 600px;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: white; padding: 15px 25px; margin-bottom: 25px;
+            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border-left: 5px solid #28a745;
+        }
+        .qr-card { 
+            background: white; padding: 30px; border-radius: 12px; 
+            text-align: center; width: 100%; max-width: 450px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+        }
+        #qrcode { 
+            margin: 20px auto; display: flex; justify-content: center; 
+            padding: 10px; border: 1px solid #f0f0f0; border-radius: 8px; 
+        }
+        .security-bar-container { height: 6px; background-color: #f1f3f5; border-radius: 3px; margin-top: 20px; overflow: hidden; }
+        .security-bar { height: 100%; background: linear-gradient(90deg, #28a745, #20c997); width: 100%; transition: width 0.1s linear; }
+        .live-counter-box {
+            background-color: #f8f9fa; border-radius: 8px; padding: 15px; 
+            margin-top: 20px; border: 1px solid #e9ecef;
+        }
+        .session-tabs { margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .session-tab { 
+            background: white; border: 1px solid #dee2e6; color: #6c757d; 
+            padding: 6px 16px; border-radius: 20px; text-decoration: none; 
+            font-size: 0.9rem; transition: 0.2s; 
+        }
+        .session-tab.active { background-color: #0056b3; color: white; border-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="top-header">
+        <div>
+            <div class="fw-bold text-success small">{{ current_session.course_code }}</div>
+            <div class="fw-bold text-dark">{{ current_session.course_name }}</div>
+        </div>
+        <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill">
+            <i class="fa-solid fa-wifi me-1"></i> Canlı
+        </span>
+    </div>
+
+    <div class="session-tabs">
+        {% for sess in all_sessions %}
+            <a href="/session/{{ sess.id }}/qr" class="session-tab {% if sess.id == current_session.id %}active{% endif %}">
+                <i class="fa-regular fa-clock me-1"></i>{{ loop.index }}. Ders
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="qr-card">
+        <h5 class="text-dark fw-bold mb-1">Yoklama QR Kodu</h5>
+        <p class="text-muted small mb-3">Lütfen kodu okutunuz.</p>
+        
+        <div id="qrcode"></div>
+        
+        <div class="security-bar-container">
+            <div class="security-bar" id="progressBar"></div>
+        </div>
+        <div class="text-muted small mt-2">
+            <i class="fa-solid fa-shield-halved"></i> Güvenlik yenileniyor: <span id="timerSec" class="fw-bold text-dark">5</span> sn
+        </div>
+
+        <div class="live-counter-box">
+            <div class="fs-1 fw-bold text-dark" id="studentCount">0</div>
+            <div class="small text-muted text-uppercase">Derse Katılan Öğrenci</div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <a href="/session/{{ current_session.id }}/attendance?source=qr" target="_blank" class="btn btn-outline-primary w-100">
+                <i class="fa-solid fa-list-check"></i> Listeyi Gör
+            </a>
+            <a href="/teacher/dashboard" class="btn btn-danger w-100">
+                <i class="fa-solid fa-power-off"></i> Bitir
+            </a>
+        </div>
+    </div>
+
+    <script>
+        var qrcodeContainer = document.getElementById("qrcode");
+        var qrcode = new QRCode(qrcodeContainer, { 
+            width: 220, 
+            height: 220,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H 
+        });
+        
+        const REFRESH_INTERVAL = 5; 
+        const SESSION_ID = "{{ current_session.id }}";
+
+        // YENİ API'den Token İste
+        function updateQR() {
+            fetch(`/api/session/${SESSION_ID}/token`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.url) {
+                        qrcode.clear();
+                        qrcode.makeCode(data.url);
+                    }
+                });
+        }
+
+        function startTimer() {
+            var bar = document.getElementById("progressBar");
+            var txt = document.getElementById("timerSec");
+            var width = 100;
+            var step = 100 / (REFRESH_INTERVAL * 10); 
+            
+            if(window.barInterval) clearInterval(window.barInterval);
+            window.barInterval = setInterval(function() {
+                width -= step;
+                bar.style.width = width + "%";
+                txt.innerText = Math.ceil((width/100)*REFRESH_INTERVAL);
+                if (width <= 0) {
+                    clearInterval(window.barInterval);
+                    updateQR(); 
+                    bar.style.width = "100%"; 
+                    startTimer(); 
+                }
+            }, 100);
+        }
+
+        // YENİ API'den Sayaç İste
+        function updateCount() {
+            fetch(`/api/session/${SESSION_ID}/count`)
+                .then(r => r.text())
+                .then(c => document.getElementById("studentCount").innerText = c);
+        }
+
+        updateQR();
+        startTimer();
+        setInterval(updateCount, 2000); 
+        updateCount();
+    </script>
+</body>
+</html>

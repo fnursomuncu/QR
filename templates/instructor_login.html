@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ankara Üniversitesi - Akademisyen Girişi</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #dfdfdf; background-image: radial-gradient(#bcbcbc 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; align-items: center; height: 100vh; }
+        header { width: 100%; background: #1a1a1a; color: white; padding: 0; display: flex; align-items: center; box-sizing: border-box; border-bottom: 3px solid #000; height: 70px; }
+        .header-logo { height: 100%; display: block; }
+        .header-logo img { height: 100%; display: block; }
+        .login-container { margin-top: 40px; width: 360px; text-align: center; }
+        .tab { width: 100%; padding: 10px; border-radius: 4px; font-size: 14px; font-weight: bold; color: white; margin-bottom: 5px; display: block; text-decoration: none; box-sizing: border-box; }
+        .tab-blue { background-color: #337ab7; }
+        .tab-gray { background-color: #777; }
+        .tab-green { background-color: #5cb85c; border: 1px solid #4cae4c; margin-bottom: 25px; cursor: default; }
+        .profile-area { width: 95px; height: 95px; margin: 0 auto 25px; border-radius: 4px; overflow: hidden; border: 1px solid #777; background-color: #8c8c8c; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .profile-area img { width: 100%; height: 100%; object-fit: cover; }
+        .input-group { margin-bottom: 10px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 14px; }
+        
+        .verify-box { background: white; border: 1px solid #ddd; padding: 10px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 3px; user-select: none; }
+        .verify-status { display: flex; align-items: center; font-size: 14px; color: #333; }
+        .check-circle { width: 22px; height: 22px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 12px; }
+        .cf-label { text-align: right; line-height: 1.1; }
+        
+        .btn-submit { width: 100%; background-color: #337ab7; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .btn-submit:hover { background-color: #286090; }
+        .forgot-link { display: block; margin-top: 15px; color: #337ab7; text-decoration: none; font-size: 13px; }
+        footer { position: fixed; bottom: 0; width: 100%; background-color: #222; color: #777; font-size: 11px; padding: 5px 0; text-align: center; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo">
+        <img src="/static/logo.png" alt="Ankara Üniversitesi Logo">
+    </div>
+</header>
+
+<div class="login-container">
+    <!-- Öğrenci Girişine Dön Linki Güncellendi -->
+    <a href="/student/login" class="tab tab-gray">Öğrenci Girişine Dön</a>
+    <div class="tab tab-green">Öğretmen Giriş Formu (Instructor Login)</div>
+
+    <div class="profile-area">
+        <img src="/static/pp.png" alt="Varsayılan Profil Resmi">
+    </div>
+
+    <!-- Form Action Güncellendi -->
+    <form action="/api/teacher/login" method="POST" autocomplete="off">
+        <div class="input-group">
+            <input type="text" name="obs_id" placeholder="Kullanıcı adınızı (Sicil No) girin." required aria-label="Sicil Numarası">
+        </div>
+        <div class="input-group">
+            <input type="password" name="sifre" placeholder="Parolanızı girin." required aria-label="Şifre">
+        </div>
+
+        <div class="verify-box">
+            <div class="verify-status">
+                <div class="check-circle">✓</div>
+                Connection is secure
+            </div>
+            <div class="cf-label">
+                <span style="font-size: 10px; font-weight: bold; color: #444;">CLOUDFLARE</span><br>
+                <span style="font-size: 9px; color: #999;">Privacy • Terms</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Oturum Aç</button>
+    </form>
+
+    <a href="#" class="forgot-link">Şifremi Unuttum</a>
+</div>
+
+<footer>
+    Sayfa OBSAPPW115 sunucusu tarafından oluşturulmuştur.
+</footer>
+
+</body>
+</html>

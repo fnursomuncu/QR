@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoklama Onayı | Ankara Üniversitesi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #e8e8e8; 
+            background-image: url('/static/bg.png');
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        .header { 
+            background-color: #232a31; height: 75px; width: 100%; 
+            display: flex; align-items: center; padding-left: 20px; 
+            border-bottom: 4px solid #000; 
+        }
+        
+        .header img { height: 55px; width: auto; }
+
+        .container { 
+            flex: 1; display: flex; flex-direction: column; 
+            align-items: center; padding: 30px 20px; 
+        }
+
+        .page-title { 
+            color: #232a31; font-size: 18px; font-weight: bold;
+            margin-bottom: 20px; text-align: center; 
+        }
+
+        .info-card { 
+            background: rgba(255, 255, 255, 1); width: 100%; 
+            max-width: 400px; border-radius: 4px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.15); 
+            overflow: hidden; margin-bottom: 25px; 
+        }
+
+        .info-header { 
+            background: #518ab4; color: white; padding: 12px 15px; 
+            font-size: 14px; font-weight: bold;
+        }
+
+        .info-row { 
+            padding: 15px; border-bottom: 1px solid #eee; 
+            display: flex; flex-direction: column; 
+        }
+        .info-row:last-child { border-bottom: none; }
+
+        .label { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .value { font-size: 15px; color: #333; font-weight: 600; }
+        
+        .status-box { 
+            display: flex; align-items: center; color: #76b041; 
+            font-size: 13px; font-weight: bold; margin-top: 5px; 
+        }
+
+        .btn-approve { 
+            background: #76b041; color: white; border: none; 
+            padding: 12px; width: 100%; max-width: 400px; 
+            border-radius: 4px; font-size: 14px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: background 0.2s; 
+        }
+        .btn-approve:hover { background: #5f9c36; }
+
+        .footer { background: #333; color: #999; width: 100%; text-align: center; padding: 10px 0; font-size: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="/static/logo.png" alt="Ankara Üni">
+    </div>
+
+    <div class="container">
+        <div class="page-title">Sayın {{ student_name }},<br>
+        {{ message if message else "İşlem Durumu" }}
+        </div>
+
+        <div class="info-card">
+            <div class="info-header">SON İŞLEM ÖZETİ</div>
+
+            <div class="info-row">
+                <div class="label">Ders Bilgisi</div>
+                <div class="value">{{ dersBilgisi }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="label">Öğretim Elemanı</div>
+                <div class="value">{{ ogretmen }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="label">İşlem Saati (Türkiye)</div>
+                <div class="value">{{ tarihSaat }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="label">Durum</div>
+                <div class="status-box">
+                    <span style="margin-right: 5px; font-size:16px;">{{ status_icon }}</span> 
+                    {{ "Onaylandı" if is_success else "Bilgi" }}
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-approve" onclick="window.location.href='/student/panel'">TAMAM (PANELE GİT)</button>
+    </div>
+
+    <div class="footer">
+        Sayfa OBSAPPW109 sunucusu tarafından oluşturulmuştur.
+    </div>
+
+</body>
+</html>

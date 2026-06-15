@@ -1,0 +1,88 @@
+-- 1. ÖĞRETMENLER TABLOSU
+-- Öğretim görevlilerinin giriş ve temel bilgilerini tutar.
+CREATE TABLE teacher (
+    id SERIAL PRIMARY KEY,
+    obs_id VARCHAR(50) UNIQUE NOT NULL, -- Sicil No
+    ad_soyad VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+-- 2. ÖĞRENCİLER TABLOSU
+-- Öğrenci bilgileri, sisteme kayıtlı cihazın UUID'si ve cihaz değiştirme hakkını tutar.
+CREATE TABLE student (
+    id SERIAL PRIMARY KEY,
+    obs_id VARCHAR(50) UNIQUE NOT NULL, -- Öğrenci No
+    ad_soyad VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    device_uuid VARCHAR(255) NULL,      -- İlk girişte kaydedilecek cihaz UUID
+    device_change_count INT DEFAULT 0   -- Cihazı kaç kez değiştirdiği (Maksimum 1 olacak)
+);
+
+-- 3. DERSLER TABLOSU
+-- Açılan dersler ve bu dersi veren öğretim görevlisi (teacher_id) ilişkisi.
+CREATE TABLE course (
+    id SERIAL PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    faculty VARCHAR(150),
+    department VARCHAR(150),
+    course_code VARCHAR(20) NOT NULL,
+    course_name VARCHAR(150) NOT NULL,
+    group_name VARCHAR(20),             -- "group" SQL'de ayrılmış kelime olduğu için "group_name" kullanıldı
+    schedule_info VARCHAR(255),         -- Ders programı (Gün/Saat)
+    kontenjan INT,
+    credit INT,
+    FOREIGN KEY (teacher_id) REFERENCES teacher(id) ON DELETE CASCADE
+);
+
+-- 4. DERS KAYITLARI (ENROLLMENT) TABLOSU
+-- Hangi öğrencinin hangi derse kayıtlı olduğunu tutan ara tablo (Many-to-Many).
+CREATE TABLE enrollment (
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
+);
+
+-- 5. OTURUMLAR (SESSION) TABLOSU
+-- Yoklaması başlatılan her bir canlı ders oturumu. Sınıfın konumu burada tutulur.
+CREATE TABLE session (
+    id SERIAL PRIMARY KEY,
+    course_id INT NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    classroom_location VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE,
+    latitude DECIMAL(10, 8),            -- Sınıfın Enlem bilgisi
+    longitude DECIMAL(11, 8),           -- Sınıfın Boylam bilgisi
+    FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
+);
+
+-- 6. YOKLAMA (ATTENDANCE) TABLOSU
+-- Öğrencinin başarılı şekilde verdiği yoklamalar.
+CREATE TABLE attendance (
+    id SERIAL PRIMARY KEY,
+    session_id INT NOT NULL,
+    student_id INT NOT NULL,
+    proof_lat DECIMAL(10, 8),           -- Öğrencinin yoklama verdiği andaki Enlem
+    proof_long DECIMAL(11, 8),          -- Öğrencinin yoklama verdiği andaki Boylam
+    device_uuid_used VARCHAR(255),      -- Yoklama için kullanılan cihazın UUID'si
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    distance_meter INT,                 -- Sınıfa olan uzaklık (hesaplanıp kaydedilir)
+    FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
+    UNIQUE(session_id, student_id)      -- Bir öğrenci bir oturumda sadece BİR KEZ yoklama verebilir
+);
+
+-- 7. QR KOD TABLOSU
+-- Güvenlik için periyodik olarak yenilenen token'ların tutulduğu tablo.
+CREATE TABLE qr_code (
+    id SERIAL PRIMARY KEY,
+    session_id INT NOT NULL,
+    unique_token VARCHAR(255) UNIQUE NOT NULL,
+    time_generated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    time_limit INT DEFAULT 25,          -- Token'ın geçerlilik süresi (saniye)
+    FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
+);

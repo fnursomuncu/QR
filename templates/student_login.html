@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ankara Üniversitesi | OBS Giriş</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <style>
+        body { background-color: #e8e8e8; user-select: none; }
+        .bg-pattern { background-image: url('https://obs.ankara.edu.tr/img/bg.png'); }
+    </style>
+    <script>
+        // Geri Tuşu İptali
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+    </script>
+</head>
+<body class="min-h-screen flex flex-col bg-pattern">
+
+    <header class="bg-[#232a31] border-b-4 border-black">
+        <img src="/static/logo.png" alt="Ankara Üniversitesi" class="h-[75px] w-auto pl-5 py-2">
+    </header>
+
+    <main class="flex-1 flex items-center justify-center p-4">
+        <div class="flex flex-col items-center w-full max-w-[420px]">
+            
+            <div id="status-box" class="w-full mb-4 p-3 bg-yellow-100 text-yellow-800 text-xs rounded border border-yellow-200 shadow">
+                <p class="font-bold mb-1">Sistem Kontrolü (Güvenlik Modu)</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li id="status-qr">QR Kod: <span class="text-gray-500">Kontrol ediliyor...</span></li>
+                    <li id="status-device">Cihaz ID: <span class="text-gray-500">Bekleniyor...</span></li>
+                    <li id="status-location">Konum: <span class="text-gray-500">Bekleniyor...</span></li>
+                </ul>
+            </div>
+
+            <button class="w-[160px] bg-[#5b9bd5] hover:bg-[#4a8ac5] text-white py-1.5 px-3 rounded text-[11px] font-bold mb-2 transition-colors shadow-sm">
+                Öğrenci Bilgi Formu
+            </button>
+            <button class="w-[270px] bg-[#70ad47] hover:bg-[#5f9c36] text-white py-1.5 px-3 rounded text-[11px] font-bold mb-6 transition-colors shadow-sm leading-tight">
+                YÖS Öğrenci Kayıt Formu (YÖS<br />Student Information Form)
+            </button>
+
+            <!-- ACTION YOLU GÜNCELLENDİ -->
+            <form action="/api/student/login" method="POST" id="loginForm" class="bg-white rounded shadow-[0_0_20px_rgba(0,0,0,0.15)] p-8 w-full max-w-[360px] text-center">
+                
+                <input type="hidden" name="qr_token" id="qr_token">
+                <input type="hidden" name="device_uuid" id="device_uuid">
+                <input type="hidden" name="latitude" id="latitude">
+                <input type="hidden" name="longitude" id="longitude">
+
+                <div class="flex justify-center mb-6">
+                    <div class="w-20 h-20 border border-gray-300 bg-gray-100 overflow-hidden">
+                        <!-- STATİK RESİM YOLU GÜNCELLENDİ -->
+                        <img src="/static/pp.png" alt="Profile" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <div class="relative mb-3">
+                    <input type="text" name="obs_id" placeholder="Kullanıcı Adı" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+
+                <div class="relative mb-4">
+                    <input type="password" name="password_hash" placeholder="Şifre" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center gap-2 mb-6 border border-gray-200 p-2 rounded bg-gray-50">
+                    <input type="checkbox" id="captcha" class="w-4 h-4 rounded border-gray-300" checked onclick="return false;">
+                    <label for="captcha" class="text-[11px] text-gray-700 flex-1 text-left">
+                        Gerçek kişi olduğunuzu doğrulayın
+                    </label>
+                    <div class="flex flex-col items-center opacity-70">
+                        <div class="text-[8px] font-bold">reCAPTCHA</div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" disabled
+                    class="w-full bg-gray-400 text-white py-2.5 rounded text-sm font-bold transition-colors mb-4 cursor-not-allowed">
+                    Sistem Hazırlanıyor...
+                </button>
+
+                <!-- LİNK YOLU GÜNCELLENDİ -->
+                <a href="/instructor/login" class="text-[#518ab4] hover:underline text-xs">Akademisyen Girişi</a>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-[#333] text-[#999] text-[10px] text-center py-2">
+        Sayfa OBSAPPW109 sunucusu tarafından oluşturulmuştur.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const statusBox = document.getElementById('status-box');
+            const submitBtn = document.getElementById('submitBtn');
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // 1. QR Kod Kontrolü
+            const token = urlParams.get('token');
+            if (token) {
+                document.getElementById('qr_token').value = token;
+                document.getElementById('status-qr').innerHTML = 'QR Kod: <span class="text-green-600 font-bold">Okundu ✓</span>';
+            } else {
+                document.getElementById('status-qr').innerHTML = 'QR Kod: <span class="text-gray-500">Normal Giriş</span>';
+            }
+
+            // 2. Python'dan Gelen Hata Mesajlarını Yakalama
+            const errorParam = urlParams.get('error');
+            if (errorParam) {
+                const errorBox = document.getElementById('error-box');
+                if (errorBox) {
+                    errorBox.classList.remove('hidden');
+                    if (errorParam === '1') {
+                        errorBox.innerText = "Kullanıcı adı veya şifre hatalı!";
+                    } else if (errorParam === 'no_device_id') {
+                        errorBox.innerText = "Güvenlik: Cihaz kimliği oluşturulamadı!";
+                    } else if (errorParam === 'device_limit') {
+                        errorBox.innerText = "Güvenlik: Başka cihazda oturumunuz açık!";
+                    } else if (errorParam === 'invalid_token') {
+                        errorBox.innerText = "QR Kod geçersiz veya süresi dolmuş!";
+                    } else {
+                        errorBox.innerText = "Bir hata oluştu. Lütfen tekrar deneyin.";
+                    }
+                }
+            }
+
+            // Butonu Aktif Etme Fonksiyonu
+            function activateButton() {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-[#518ab4]', 'hover:bg-[#4a8ac5]');
+                submitBtn.innerText = "OTURUM AÇ";
+                
+                statusBox.classList.remove('bg-yellow-100', 'border-yellow-200', 'text-yellow-800');
+                statusBox.classList.add('bg-blue-100', 'border-blue-200', 'text-blue-800');
+            }
+
+            // 3. GÜVENLİ VERİ ÇEKME (Çökmelere Karşı Korumalı)
+            try {
+                // Cihaz Kimliği (Fingerprint) Kontrolü
+                if (typeof FingerprintJS !== 'undefined') {
+                    const fp = await FingerprintJS.load();
+                    const fpResult = await fp.get();
+                    document.getElementById('device_uuid').value = fpResult.visitorId;
+                    document.getElementById('status-device').innerHTML = 'Cihaz ID: <span class="text-green-600 font-bold">Hazır ✓</span>';
+                } else {
+                    document.getElementById('status-device').innerHTML = 'Cihaz ID: <span class="text-red-600">Yüklenemedi</span>';
+                }
+
+                // Konum Kontrolü (Zaman aşımı 4 saniye)
+                await new Promise((resolve) => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                document.getElementById('latitude').value = pos.coords.latitude;
+                                document.getElementById('longitude').value = pos.coords.longitude;
+                                document.getElementById('status-location').innerHTML = 'Konum: <span class="text-green-600 font-bold">Alındı ✓</span>';
+                                resolve();
+                            },
+                            (err) => {
+                                document.getElementById('status-location').innerHTML = 'Konum: <span class="text-red-600">Atlandı</span>';
+                                resolve();
+                            },
+                            { timeout: 4000 }
+                        );
+                    } else {
+                        resolve();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Güvenlik taraması hatası:", error);
+            } finally {
+                // NE OLURSA OLSUN BUTONU AÇ!
+                activateButton();
+            }
+        });
+    </script>
+</body>
+</html>

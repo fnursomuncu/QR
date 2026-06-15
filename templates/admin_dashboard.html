@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yönetim Paneli | OBS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Inter', sans-serif; }
+        .sidebar { height: 100vh; background-color: #2c3e50; position: fixed; width: 250px; z-index: 100;}
+        .sidebar-brand { padding: 20px; color: white; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-link { color: #bdc3c7; padding: 15px 20px; transition: 0.3s; border-left: 3px solid transparent; }
+        .nav-link:hover, .nav-link.active { background-color: #34495e; color: white; border-left: 3px solid #3498db; }
+        .main-content { margin-left: 250px; padding: 30px; }
+        .card-custom { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card-header-custom { background-color: white; border-bottom: 1px solid #f0f0f0; padding: 15px 20px; border-radius: 10px 10px 0 0 !important; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand fw-bold text-center fs-5">
+        <i class="fa-solid fa-shield-halved text-info"></i> OBS Yönetim
+    </div>
+    <div class="nav flex-column nav-pills mt-3" id="v-pills-tab" role="tablist">
+        <button class="nav-link active text-start rounded-0" data-bs-toggle="pill" data-bs-target="#courses"><i class="fa-solid fa-book me-2"></i> Dersler</button>
+        <button class="nav-link text-start rounded-0" data-bs-toggle="pill" data-bs-target="#enrollments"><i class="fa-solid fa-clipboard-user me-2"></i> Ders Kayıtları</button>
+        <button class="nav-link text-start rounded-0" data-bs-toggle="pill" data-bs-target="#teachers"><i class="fa-solid fa-chalkboard-user me-2"></i> Hocalar</button>
+        <button class="nav-link text-start rounded-0" data-bs-toggle="pill" data-bs-target="#students"><i class="fa-solid fa-user-graduate me-2"></i> Öğrenciler</button>
+    </div>
+    <div class="position-absolute bottom-0 w-100 p-3">
+        <a href="/admin/logout" class="btn btn-danger w-100 shadow-sm" onclick="return confirm('Çıkış yapılsın mı?');"><i class="fa-solid fa-power-off me-2"></i> Güvenli Çıkış</a>
+    </div>
+</div>
+
+<div class="main-content">
+    {% if message %}
+        <div class="alert alert-{{ msg_type }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endif %}
+
+    <div class="tab-content" id="v-pills-tabContent">
+        <div class="tab-pane fade show active" id="courses">
+            <div class="card card-custom">
+                <div class="card-header-custom text-primary"><i class="fa-solid fa-plus-circle me-1"></i> Yeni Ders Ekle</div>
+                <div class="card-body p-4">
+                    <form action="/api/admin/add" method="POST" class="row g-3">
+                        <input type="hidden" name="form_action" value="add_course">
+                        <div class="col-md-12">
+                            <label class="form-label small text-muted">Dersi Verecek Hoca</label>
+                            <select name="teacher_id" class="form-select bg-light" required>
+                                <option value="">-- Hoca Seçiniz --</option>
+                                {% for t in teachers %}<option value="{{ t.id }}">{{ t.ad_soyad }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6"><input type="text" name="course_code" class="form-control" placeholder="Ders Kodu (Örn: MAT101)" required></div>
+                        <div class="col-md-6"><input type="text" name="course_name" class="form-control" placeholder="Ders Adı" required></div>
+                        <div class="col-md-6"><input type="text" name="faculty" class="form-control" placeholder="Fakülte" required></div>
+                        <div class="col-md-6"><input type="text" name="department" class="form-control" placeholder="Bölüm" required></div>
+                        <div class="col-md-4"><input type="text" name="group_name" class="form-control" placeholder="Grup/Şube"></div>
+                        <div class="col-md-4"><input type="text" name="schedule_info" class="form-control" placeholder="Program (Örn: Pzt|09:00)"></div>
+                        <div class="col-md-2"><input type="number" name="kontenjan" class="form-control" placeholder="Kontenjan"></div>
+                        <div class="col-md-2"><input type="number" name="credit" class="form-control" placeholder="Kredi"></div>
+                        <div class="col-12 mt-4"><button type="submit" class="btn btn-primary w-100">Dersi Kaydet</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header-custom"><i class="fa-solid fa-list me-1"></i> Ders Listesi</div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light"><tr><th class="ps-4">Kod</th><th>Ders</th><th>Hoca</th><th>Program</th><th class="text-end pe-4">İşlem</th></tr></thead>
+                        <tbody>
+                            {% for c in courses %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ c.course_code }}</td>
+                                <td>{{ c.course_name }}</td>
+                                <td class="text-primary">{{ c.hoca_adi if c.hoca_adi else '-' }}</td>
+                                <td class="text-muted small">{{ c.schedule_info }}</td>
+                                <td class="text-end pe-4"><a href="/api/admin/action?type=course&action=delete&id={{ c.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('SİLİNECEK. Onaylıyor musunuz?');">Sil</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="enrollments">
+            <div class="card card-custom">
+                <div class="card-header-custom text-success"><i class="fa-solid fa-link me-1"></i> Öğrenciyi Derse Eşleştir</div>
+                <div class="card-body p-4">
+                    <form action="/api/admin/add" method="POST" class="row g-3">
+                        <input type="hidden" name="form_action" value="enroll_student">
+                        <div class="col-md-5">
+                            <select name="student_id" class="form-select" required>
+                                <option value="">-- Öğrenci Seçiniz --</option>
+                                {% for s in students %}<option value="{{ s.id }}">{{ s.obs_id }} - {{ s.ad_soyad }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <select name="course_id" class="form-select" required>
+                                <option value="">-- Ders Seçiniz --</option>
+                                {% for c in courses %}<option value="{{ c.id }}">{{ c.course_code }} - {{ c.course_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2"><button type="submit" class="btn btn-success w-100">Kaydet</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header-custom"><i class="fa-solid fa-list me-1"></i> Kayıt Listesi</div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light"><tr><th class="ps-4">Öğrenci No</th><th>Ad Soyad</th><th>Aldığı Ders</th><th class="text-end pe-4">İşlem</th></tr></thead>
+                        <tbody>
+                            {% for e in enrollments %}
+                            <tr>
+                                <td class="ps-4">{{ e.obs_id }}</td>
+                                <td class="fw-medium">{{ e.ad_soyad }}</td>
+                                <td><span class="badge bg-success bg-opacity-10 text-success">{{ e.course_code }} {{ e.course_name }}</span></td>
+                                <td class="text-end pe-4"><a href="/api/admin/action?type=enrollment&action=delete&sid={{ e.student_id }}&cid={{ e.course_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Kayıt silinsin mi?');">İptal Et</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="students">
+            <div class="card card-custom">
+                <div class="card-header-custom text-info"><i class="fa-solid fa-user-plus me-1"></i> Yeni Öğrenci Ekle</div>
+                <div class="card-body p-4">
+                    <form action="/api/admin/add" method="POST" class="row g-3">
+                        <input type="hidden" name="form_action" value="add_student">
+                        <div class="col-md-3"><input type="text" name="obs_id" class="form-control" placeholder="Öğrenci No" required></div>
+                        <div class="col-md-3"><input type="text" name="ad_soyad" class="form-control" placeholder="Ad Soyad" required></div>
+                        <div class="col-md-3"><input type="email" name="email" class="form-control" placeholder="E-Posta" required></div>
+                        <div class="col-md-3"><input type="text" name="password" class="form-control" placeholder="Şifre" required></div>
+                        <div class="col-12"><button type="submit" class="btn btn-info text-white w-100">Öğrenciyi Kaydet</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header-custom"><i class="fa-solid fa-list me-1"></i> Öğrenci Listesi</div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light"><tr><th class="ps-4">No</th><th>Ad Soyad</th><th>Cihaz Durumu</th><th class="text-end pe-4">İşlemler</th></tr></thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr>
+                                <td class="ps-4">{{ s.obs_id }}</td>
+                                <td class="fw-bold">{{ s.ad_soyad }}</td>
+                                <td>
+                                    {% if s.device_uuid %}
+                                        <span class="badge bg-success"><i class="fa-solid fa-mobile-screen"></i> Eşleşti</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Yok</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if s.device_uuid %}
+                                        <a href="/api/admin/action?type=student&action=reset_device&id={{ s.id }}" class="btn btn-sm btn-warning text-dark fw-medium shadow-sm me-1">Cihazı Sıfırla</a>
+                                    {% endif %}
+                                    <a href="/api/admin/action?type=student&action=delete&id={{ s.id }}" class="btn btn-sm btn-danger shadow-sm" onclick="return confirm('Silmek istediğinize emin misiniz?');">Sil</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="teachers">
+            <div class="card card-custom">
+                <div class="card-header-custom text-warning"><i class="fa-solid fa-chalkboard-user me-1"></i> Yeni Hoca Ekle</div>
+                <div class="card-body p-4">
+                    <form action="/api/admin/add" method="POST" class="row g-3">
+                        <input type="hidden" name="form_action" value="add_teacher">
+                        <div class="col-md-3">
+                            <input type="text" name="obs_id" class="form-control" placeholder="Sicil No (Giriş ID'si)" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="ad_soyad" class="form-control" placeholder="Unvan ve Ad Soyad" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="email" name="email" class="form-control" placeholder="E-Posta Adresi" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="password" class="form-control" placeholder="Giriş Şifresi" required>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold text-dark shadow-sm">Hocayı Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-header-custom"><i class="fa-solid fa-list me-1"></i> Kayıtlı Hocalar Listesi</div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Sicil No</th>
+                                <th>Unvan / Ad Soyad</th>
+                                <th>E-Posta</th>
+                                <th class="text-end pe-4">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in teachers %}
+                            <tr>
+                                <td class="ps-4 fw-medium">{{ t.obs_id }}</td>
+                                <td class="fw-bold text-primary">{{ t.ad_soyad }}</td>
+                                <td class="text-muted">{{ t.email }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="/api/admin/action?type=teacher&action=delete&id={{ t.id }}" class="btn btn-sm btn-danger shadow-sm" onclick="return confirm('SİLİNECEK: {{ t.ad_soyad }} - Bu hocaya ait tüm dersler de silinebilir! Onaylıyor musunuz?');">Hocayı Sil</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not teachers %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Sistemde henüz kayıtlı hoca bulunmuyor.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

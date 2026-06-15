@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yoklama Listesi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .badge-var { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px;}
+        .badge-yok { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px;}
+        .header-bar { background: white; padding: 15px 20px; border-bottom: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .past-warning { background-color: #fff3cd; color: #856404; border-bottom: 1px solid #ffeeba; text-align: center; padding: 8px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+{% if source == 'report' %}
+    <div class="past-warning bg-info bg-opacity-10 text-primary border-info border-opacity-25">
+        <i class="fa-solid fa-pen-to-square me-1"></i> Rapor üzerinden düzenleme modundasınız.
+    </div>
+{% elif is_past_session %}
+    <div class="past-warning">
+        <i class="fa-solid fa-lock me-1"></i> Bu oturum tamamlanmıştır. Sadece manuel düzenleme yapabilirsiniz.
+    </div>
+{% endif %}
+
+<div class="header-bar d-flex justify-content-between align-items-center">
+    <div>
+        <h5 class="m-0 fw-bold text-dark">
+            {{ session_info.course_code }} 
+            <span class="text-muted fw-normal ms-2" style="font-size: 0.9em;">
+                {{ session_info.start_time.strftime('%d.%m.%Y %H:%M') }}
+            </span>
+        </h5>
+        <small class="text-muted">Oturum ID: #{{ session_id }}</small>
+    </div>
+    
+    <div class="d-flex gap-2">
+        {% if source == 'report' %}
+            <a href="/course/{{ session_info.course_id }}/report" class="btn btn-primary btn-sm shadow-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Rapora Dön
+            </a>
+        {% else %}
+            <a href="/teacher/dashboard" class="btn btn-danger btn-sm shadow-sm">
+                <i class="fa-solid fa-stop me-1"></i> Yoklamayı Bitir
+            </a>
+        {% endif %}
+        
+        {% if show_qr_button %}
+            <a href="/session/{{ session_id }}/qr" target="_blank" class="btn btn-dark btn-sm shadow-sm">
+                <i class="fa-solid fa-qrcode me-1"></i> QR Yansıt
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">No</th>
+                        <th>Öğrenci Adı</th>
+                        <th>Giriş Saati</th>
+                        <th class="text-center">Durum</th>
+                        <th class="text-end pe-4">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td class="ps-4 text-muted fw-bold">{{ student.obs_id }}</td>
+                        <td>
+                            <div class="fw-bold">{{ student.ad_soyad }}</div>
+                        </td>
+                        
+                        <td id="time-{{ student.student_db_id }}" class="text-muted small">
+                            {% if student.giris_zamani %}
+                                {{ student.giris_zamani.strftime('%H:%M') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center" id="status-{{ student.student_db_id }}">
+                            {% if student.giris_zamani %}
+                                <span class="badge-var"><i class="fa-solid fa-check"></i> MEVCUT</span>
+                            {% else %}
+                                <span class="badge-yok">YOK</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-end pe-4">
+                            <div id="btn-area-{{ student.student_db_id }}">
+                                {% if not student.giris_zamani %}
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            onclick="updateAttendance('{{ student.student_db_id }}', '{{ session_id }}', 'add')">
+                                        Var Yaz
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="updateAttendance('{{ student.student_db_id }}', '{{ session_id }}', 'remove')">
+                                        Sil
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// YENİ API'ye İstek Atan Fonksiyon
+function updateAttendance(studentId, sessionId, action) {
+    const data = { student_id: studentId, session_id: sessionId, action: action };
+    
+    fetch('/api/attendance/manual-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.detail || "Sunucu Hatası"); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            const statusCell = document.getElementById('status-' + studentId);
+            const timeCell = document.getElementById('time-' + studentId);
+            const btnArea = document.getElementById('btn-area-' + studentId);
+            
+            if (action === 'add') {
+                statusCell.innerHTML = '<span class="badge-var"><i class="fa-solid fa-check"></i> MEVCUT</span>';
+                timeCell.innerText = data.new_time; 
+                // JS ile oluşturulan yeni butona da type="button" ekledik
+                btnArea.innerHTML = `<button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAttendance(${studentId}, ${sessionId}, 'remove')">Sil</button>`;
+            } else {
+                statusCell.innerHTML = '<span class="badge-yok">YOK</span>';
+                timeCell.innerText = '-';
+                btnArea.innerHTML = `<button type="button" class="btn btn-sm btn-outline-success" onclick="updateAttendance(${studentId}, ${sessionId}, 'add')">Var Yaz</button>`;
+            }
+        }
+    })
+    .catch(error => {
+        alert("İşlem Başarısız: " + error.message);
+        console.error("Fetch Hatası:", error);
+    });
+}
+</script>
+</body>
+</html>
