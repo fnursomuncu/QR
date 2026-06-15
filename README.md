@@ -27,6 +27,7 @@ Yoklama esnasında cihazın anlık koordinatları (enlem/boylam) alınır. Haver
 📅 Zaman ve Ders Çizelgesi Doğrulaması
 Ders programı yoğunluğunun yüksek olduğu günlerde bile sistem, Regex (Regular Expressions) kullanarak o anki tarih ve saatte hangi dersin aktif olduğunu arka planda tespit eder. Sadece doğru zaman dilimindeki derse oturum açılmasına izin verir.
 
+
 👥 2. Kullanıcı Rolleri ve Yetenekleri
 Sistem üç farklı kullanıcı rolü (Aktris/Aktör) üzerine inşa edilmiştir:
 
@@ -39,6 +40,7 @@ Geri Bildirim: İşlem başarılı olduğunda anlık "Yoklama Başarıyla Kayded
 
 Geçmiş: Kendi panelinden hangi derse, hangi gün ve saatte katıldığının tam listesini görüntüleme.
 
+
 👩‍🏫 Öğretmen (Teacher) Modülü
 Ders Yönetimi: Kendisine atanan derslerin listesini ve detaylarını görme.
 
@@ -49,6 +51,7 @@ Canlı Takip: Yoklama ekranında derse katılan öğrencileri saniye saniye (rea
 Manuel Müdahale: Şarjı biten veya teknik sorun yaşayan öğrenciler için sistem üzerinden manuel öğrenci ekleme/çıkarma yetkisi.
 
 Raporlama: Dönem sonu başarı ve devamsızlık yüzdelerini renk kodlarıyla (Yeşil, Sarı, Kırmızı) gösteren gelişmiş analitik raporlama.
+
 
 ⚡ Yönetici (Admin) Modülü
 ⚠️ Erişim Notu: Sistemin en yetkili modudur. Varsayılan erişim şifresi a1d2m3in olarak belirlenmiştir.
