@@ -10,7 +10,7 @@ Uygulamayı yerel sunucunuzda ayağa kaldırmak için terminalde aşağıdaki ko
 
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
+```
 
 🔒 1. Güvenlik ve Doğrulama Kontrolleri (Sistemin Kalbi)
 Uygulamanın en güçlü yanı, suistimalleri sıfıra indiren çok katmanlı güvenlik mimarisidir:
