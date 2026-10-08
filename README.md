@@ -1,6 +1,6 @@
 # 📱 Akıllı QR Kod Tabanlı Yoklama Sistemi
 
-Bu proje; öğrencilerin uzaktan, başkalarının yerine veya sahte konumlarla yoklama vermesini engellemek amacıyla geliştirilmiş, yüksek güvenlikli ve çok katmanlı bir mobil/web yoklama yönetim sistemidir.
+Bu proje; öğrencilerin uzaktan, başkalarının yerine veya sahte konumlarla yoklama vermesini engellemek amacıyla geliştirilmiş, yüksek güvenlikli ve çok katmanlı bir mobil/web yoklama yönetim sistemidir. (Nesne Temelli Programlama dersi için grup olarak geliştirilmiştir.)
 
 ---
 
